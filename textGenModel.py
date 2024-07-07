@@ -3,7 +3,7 @@ import os
 import time
 import re
 import streamlit as st
-genai.configure(api_key="AIzaSyCD6M571IvBJHm31wTF5vOrGV60gk-PtRQ")
+genai.configure(api_key="Your Gemini Api key")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 def stream_data(data, delay: float = 0.02):
