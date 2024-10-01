@@ -19,7 +19,7 @@ import psutil                                                                   
 #from googlesearch import search
 from gnews import GNews
 import pywhatkit
-
+from otherImgGen import ImageGenerator as IG
 
 #wish
 #date and time
@@ -64,6 +64,7 @@ begin = False
 brk = False
 go = False
 toggle = False
+voicePrompt = ""
 
 def speak2(wrd):
     st.write(wrd)
@@ -91,7 +92,6 @@ def takeCommand():
         query = query.lower()
         return query
 
-
 def taskExecute(query):
     
     if taskEnable:  
@@ -118,7 +118,7 @@ def taskExecute(query):
             speak2("What Should I write, Sir")
             try:
                 note = takeCommand()
-                file = open('jarvis.txt', 'w')
+                file = open(f'jarvis{time.time()}.txt', 'w')
                 time_reply = " Should i include date and time"
                 speak2(time_reply)
                 snfm = takeCommand().lower()
@@ -377,16 +377,44 @@ def process(prompt):
         response = textGenModel.chatResponse(prompt)
         stream_data(response.text, delay=0.02)
 
+def gen_prompt(text):
+    try:
+        response = textGenModel.chatResponse(f"Generate a prompt for image generation for the given text: {text}. Only generate the single best prompt and nothing else.")
+        return response.text
+    except Exception as e:
+        st.error(e)
+
+def imageGen(text, default_flag, stop):
+    prompt_list = []
+    default = "3D realistic cartoonistic ultra HD " 
+    with st.spinner("Visualizing..."):
+        i = 0
+        while i < 4 and not stop:
+            imgPrompt = gen_prompt(text)
+            #print(imgPrompt)
+            prompt_list.append(imgPrompt)
+            #print(f'Prompt for image: {imgPrompt}')
+            i += 1
+    # Display generated images
+        for prom in prompt_list:    
+            if default_flag == 1:
+                newPrompt = f'{default} {prom}'
+            elif default_flag == 0:
+                newPrompt = prom
+            img, f = IG(f'{newPrompt}')
+            st.image(img)
+
 st.title("AI Desktop Assistant")
-st.divider()
-if st.button("Start"):
-    begin = True
 st.divider()
 #st.image("jarvis5.gif",width=200)
 sidebar = st.sidebar
 sidebar.title("Menu")
 file = sidebar.file_uploader("Choose a Image file")
 
+if sidebar.button("START"):
+    begin = True
+stop = False
+stop = sidebar.button("STOP")
 
 home, voice, task, about = st.tabs(["Home", "voice","Task", "About"])
 
@@ -398,10 +426,23 @@ with home:
             playTime(time_text)
             begin = False
 
+        imgGen = st.toggle("Image Generation")
+        if imgGen:
+            prompt = ""
+            prompt_type = st.radio("Prompt type", ["default", "custom"])
+            if prompt_type=="custom":
+                default_flag = 0
+            elif prompt_type=="default":
+                default_flag = 1
+
+
         st.subheader("ChatBot")
         prompt = left.text_input("Ask Something...", placeholder="Key of Knowledge...")
 
-        if prompt:
+        if prompt and imgGen:
+            imageGen(prompt, default_flag, stop)
+
+        elif prompt:
             go = True
             sound = False
             with left.chat_message("user"):
@@ -448,7 +489,7 @@ with voice:
     sound = False
     left, right = st.columns(2)
     with left:
-        enable = st.toggle("Voice")
+        enable = st.toggle("Voice Output")
         if enable:
             sound = True
 
@@ -456,8 +497,14 @@ with voice:
         if enable:
             voice_choice = st.radio("Assistant", ["Male","Female"])
             val = setChoice(voice_choice)
+        voice_input = right.toggle("Voice Input")
+    
+    if voice_input:
+        with st.spinner("Listening..."):
+            voicePrompt = takeCommand()
+            right.session_state.voice_input = False
 
-    voicePrompt = voice.text_input("Text Something...", placeholder="Key of Knowledge...")
+    voicePrompt = voice.text_input("Text Something...", placeholder="Key of Knowledge...", value=voicePrompt)
     if voicePrompt:
         go = True  
         left, right = st.columns(2)
@@ -479,8 +526,6 @@ with task:
             time.sleep(1)
             st.session_state.task_enable = False
     
-            
-
 with about:
     
     left, right = st.columns([1,2])
@@ -501,60 +546,43 @@ with about:
         <h6>https://github.com/</h6>         
 """, unsafe_allow_html=True)
     st.divider()
-        # Define the tasks and capabilities
-    import streamlit as st
+    html_content = """
+    <h3 style="color: orange;">Key Tasks</h3>
+    <ul style="list-style-type: none; padding-left: 0;">
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">1. Automation of Computer:</span> 
+            This feature allows users to generate high-quality images based on specific prompts they provide. It's particularly useful in creative fields such as graphic design, advertising, and content creation, enabling users to visualize concepts and ideas quickly.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">1. Browsing using voice:</span> 
+            This feature allows users to generate high-quality images based on specific prompts they provide. It's particularly useful in creative fields such as graphic design, advertising, and content creation, enabling users to visualize concepts and ideas quickly.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">1. Image Generation:</span> 
+            This feature allows users to generate high-quality images based on specific prompts they provide. It's particularly useful in creative fields such as graphic design, advertising, and content creation, enabling users to visualize concepts and ideas quickly.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">2. Text Summarization:</span> 
+            The assistant can summarize lengthy texts into concise formats, making it ideal for students and professionals who need to digest information quickly. This feature can help in research, news aggregation, and report generation.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">3. Answer Queries:</span> 
+            Users can ask questions across various topics, and the assistant provides accurate answers, enhancing knowledge acquisition. This is beneficial for educational purposes and customer service applications, where quick responses are crucial.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">4. Personalized Recommendations:</span> 
+            By analyzing user preferences and behavior, the assistant can offer tailored suggestions. This application is especially useful in e-commerce, entertainment, and content curation, helping users discover products, movies, and articles that match their interests.
+        </li>
+        <li style="margin: 10px 0;">
+            <span style="color: #0d6efd; font-weight: bold;">5. User-Friendly Interface:</span> 
+            The assistant features an intuitive and easy-to-navigate interface that enhances the overall user experience. This is crucial in ensuring that users of all technical levels can interact with the assistant effectively and efficiently.
+        </li>
+    </ul>
 
-    # Define the tasks and capabilities
-    tasks = [
-        "Wish the user a good time of day (morning, afternoon, evening)",
-        "Display today's date and time",
-        "Question-Answering",
-        "Mathematics and Calculations"
-        "Show today's day",
-        "Take notes and save them",
-        "Open Facebook, Twitter, GitHub, Stack Overflow",
-        "Execute voice commands",
-        "Search on Wikipedia, YouTube, and Google",
-        "Open Amazon and other websites",
-        "Open Command Prompt and VS Code",
-        "Check remaining battery percentage",
-        "Introduce itself and its creator",
-        "Retrieve location and weather temperature",
-        "Take a screenshot",
-        "Shut down and restart the computer",
-        "Open WhatsApp web",
-        "Answer general questions (e.g., 'expert ans')",
-        "Play YouTube videos",
-        "Fetch news",
-        "Perform searches",
-        "Exit the assistant",
-        "Open the camera",
-        "Set alarms",
-        "Perform calculations",
-        "Tell jokes",
-        "Switch windows",
-        "Minimize or close windows",
-        "Locate other places",
-        "Many More"
-    ]
-
-    # Generate the markdown content with improved CSS styling
-    about_text = f"""
-    <div style="background-color: rgb(40 40 40); padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; color: white;">
-        <h2 style="font-size: 24px; color: white; margin-bottom: 15px;">About This Virtual Assistant</h2>
-        <p>This virtual assistant, built using Streamlit, is capable of performing various tasks to assist you with your daily activities and queries. Below are some of its capabilities:</p>
-
-        <ul style="list-style-type: disc; padding-left: 20px;">
+    <h4 style="color: orange;">Conclusion</h4>
+    <p style="color: yellow;">
+        The AI Assistant empowers users to maximize their productivity while enjoying a personalized interaction experience. By combining cutting-edge technology with user-centric design, this project stands out in its ability to cater to diverse user needs, ultimately enhancing their daily tasks and activities.
+    </p>
     """
 
-    # Add each task as a list item
-    for task in tasks:
-        about_text += f'<li style="font-size: 16px; margin-bottom: 8px;">{task}</li>\n'
-
-    about_text += """
-        </ul>
-    </div>
-    """
-
-    # Display the styled markdown in the About tab
-    st.markdown(about_text, unsafe_allow_html=True)
+    st.markdown(html_content, unsafe_allow_html=True)
