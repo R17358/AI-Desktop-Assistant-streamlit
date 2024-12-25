@@ -6,8 +6,8 @@ import numpy as np
 import time
 import cv2
 
-API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
-headers = {"Authorization": "Bearer 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"}
+API_URL = ""
+headers = {"Authorization": "Bearer "}
 
 def query(payload):
     response = requests.post(API_URL, headers=headers, json=payload)
